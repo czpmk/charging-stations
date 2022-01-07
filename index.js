@@ -33,13 +33,22 @@ const init = async() => {
 
     app.get('/stations',
         query('token').isLength({ min: 32, max: 32 }),
-        stationHandlers.GetAll);
+        stationHandlers.GetAllStations);
 
-    app.get('/stations/details',
+    app.get('/chargers',
         query('token').isLength({ min: 32, max: 32 }),
-        stationHandlers.GetAll);
+        query('station_id').isLength({ min: 1, max: 32 }),
+        stationHandlers.GetChargers);
 
-    app.get('/stations/by', stationHandlers.GetBy);
+    app.get('/comments',
+        query('token').isLength({ min: 32, max: 32 }),
+        query('station_id').isLength({ min: 1, max: 32 }),
+        stationHandlers.GetComments);
+
+    app.get('/ratings',
+        query('token').isLength({ min: 32, max: 32 }),
+        query('station_id').isLength({ min: 1, max: 32 }),
+        stationHandlers.GetRatings);
 
     app.listen(3011, () => {
         console.log('Localhost, listening on port 3011')
