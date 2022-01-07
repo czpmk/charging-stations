@@ -6,6 +6,7 @@ const app = express()
 const userHandlers = require('./userHandlers');
 const stationHandlers = require('./stationsHandlers');
 const { response } = require('express');
+const cors = require('cors')
 
 app.use(bodyParser.json())
 app.use(
@@ -13,6 +14,7 @@ app.use(
         extended: true
     })
 )
+app.use(cors());
 
 const init = async() => {
     app.put('/register',
@@ -38,7 +40,6 @@ const init = async() => {
         stationHandlers.GetAll);
 
     app.get('/stations/by', stationHandlers.GetBy);
-
 
     app.listen(3011, () => {
         console.log('Localhost, listening on port 3011')
