@@ -131,9 +131,7 @@ const GetRatings = async(request, response) => {
 const AddComment = async(request, response) => {
     const { token } = request.query;
     const { comment, station_id } = request.body;
-    console.log(comment)
-    console.log(station_id)
-    let x = validationResult(request)
+
     if (!validationResult(request).isEmpty()) {
         response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.PARAMETER_INVALID });
         return;
