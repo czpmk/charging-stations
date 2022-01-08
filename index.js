@@ -37,17 +37,25 @@ const init = async() => {
 
     app.get('/chargers',
         query('token').isLength({ min: 32, max: 32 }),
-        query('station_id').isLength({ min: 1, max: 32 }),
         stationHandlers.GetChargers);
 
     app.get('/comments',
         query('token').isLength({ min: 32, max: 32 }),
-        query('station_id').isLength({ min: 1, max: 32 }),
         stationHandlers.GetComments);
+
+    app.get('/comments',
+        query('token').isLength({ min: 32, max: 32 }),
+        body('station_id').isNumeric(),
+        stationHandlers.GetComments);
+
+    app.post('/comments/new',
+        query('token').isLength({ min: 32, max: 32 }),
+        body('comment').isLength({ min: 1, max: 500 }),
+        body('station_id').isNumeric(),
+        stationHandlers.AddComment);
 
     app.get('/ratings',
         query('token').isLength({ min: 32, max: 32 }),
-        query('station_id').isLength({ min: 1, max: 32 }),
         stationHandlers.GetRatings);
 
     app.listen(3011, () => {

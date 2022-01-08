@@ -28,7 +28,7 @@ const GetAllStations = async(request, response) => {
     }
 
     if (await utils.ValidateToken(pool, token) == false) {
-        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
         return;
     }
 
@@ -40,14 +40,14 @@ const GetAllStations = async(request, response) => {
             response.status(200).json({ "valid": true, "length": results.rows.length, "results": results.rows })
             return;
         } else {
-            response.status(200).json({ "valid": false })
+            response.status(200).json({ "valid": true, "length": results.rows.length, "results": [] })
             return;
         }
     })
 }
 
 const GetChargers = async(request, response) => {
-    const { token, station_id } = request.query;
+    const { token } = request.query;
 
     if (!validationResult(request).isEmpty()) {
         response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.PARAMETER_INVALID });
@@ -56,11 +56,11 @@ const GetChargers = async(request, response) => {
 
 
     if (await utils.ValidateToken(pool, token) == false) {
-        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
         return;
     }
 
-    pool.query('SELECT * FROM chargers WHERE station_id = $1', [station_id], (error, results) => {
+    pool.query('SELECT * FROM chargers', (error, results) => {
         if (error) {
             throw error
         }
@@ -68,14 +68,14 @@ const GetChargers = async(request, response) => {
             response.status(200).json({ "valid": true, "length": results.rows.length, "results": results.rows })
             return;
         } else {
-            response.status(200).json({ "valid": true, "length": results.rows.length })
+            response.status(200).json({ "valid": true, "length": results.rows.length, "results": [] })
             return;
         }
     })
 }
 
 const GetComments = async(request, response) => {
-    const { token, station_id } = request.query;
+    const { token } = request.query;
 
     if (!validationResult(request).isEmpty()) {
         response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.PARAMETER_INVALID });
@@ -83,11 +83,11 @@ const GetComments = async(request, response) => {
     }
 
     if (await utils.ValidateToken(pool, token) == false) {
-        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
         return;
     }
 
-    pool.query('SELECT comments.id, comments.station_id, comments.user_id, comments.comment, users.email FROM comments RIGHT JOIN users ON comments.user_id = users.id WHERE comments.station_id = $1', [station_id], (error, results) => {
+    pool.query('SELECT comments.id, comments.station_id, comments.user_id, comments.comment, users.email FROM comments RIGHT JOIN users ON comments.user_id = users.id', (error, results) => {
         if (error) {
             throw error
         }
@@ -95,14 +95,14 @@ const GetComments = async(request, response) => {
             response.status(200).json({ "valid": true, "length": results.rows.length, "results": results.rows })
             return;
         } else {
-            response.status(200).json({ "valid": true, "length": results.rows.length })
+            response.status(200).json({ "valid": true, "length": results.rows.length, "results": [] })
             return;
         }
     })
 }
 
 const GetRatings = async(request, response) => {
-    const { token, station_id } = request.query;
+    const { token } = request.query;
 
     if (!validationResult(request).isEmpty()) {
         response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.PARAMETER_INVALID });
@@ -110,11 +110,11 @@ const GetRatings = async(request, response) => {
     }
 
     if (await utils.ValidateToken(pool, token) == false) {
-        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
         return;
     }
 
-    pool.query('SELECT * FROM ratings WHERE station_id = $1', [station_id], (error, results) => {
+    pool.query('SELECT * FROM ratings', (error, results) => {
         if (error) {
             throw error
         }
@@ -122,9 +122,41 @@ const GetRatings = async(request, response) => {
             response.status(200).json({ "valid": true, "length": results.rows.length, "results": results.rows })
             return;
         } else {
-            response.status(200).json({ "valid": true, "length": results.rows.length })
+            response.status(200).json({ "valid": true, "length": results.rows.length, "results": [] })
             return;
         }
+    })
+}
+
+const AddComment = async(request, response) => {
+    const { token } = request.query;
+    const { comment, station_id } = request.body;
+    console.log(comment)
+    console.log(station_id)
+    let x = validationResult(request)
+    if (!validationResult(request).isEmpty()) {
+        response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.PARAMETER_INVALID });
+        return;
+    }
+
+    if (await utils.ValidateToken(pool, token) == false) {
+        response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        return;
+    }
+
+    const res = await utils.GetUserInfoByToken(pool, token)
+    if (!res.valid) {
+        response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        return
+    }
+    const userId = res.results.user_id
+
+    pool.query('INSERT INTO comments (user_id, station_id, comment) VALUES ($1, $2, $3)', [userId, station_id, comment], (error, results) => {
+        if (error) {
+            throw error
+        }
+        response.status(200).json({ "valid": true })
+        return;
     })
 }
 
@@ -132,5 +164,6 @@ module.exports = {
     GetAllStations,
     GetChargers,
     GetComments,
-    GetRatings
+    GetRatings,
+    AddComment
 }

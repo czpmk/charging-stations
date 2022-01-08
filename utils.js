@@ -43,6 +43,14 @@ const ValidateToken = async(pool, token) => {
     }
 }
 
+
+const GetUserInfoByToken = async(pool, token) => {
+    const result = await pool.query('SELECT sessions.user_id, users.email FROM sessions RIGHT JOIN users ON sessions.user_id = users.id WHERE sessions.token = $1', [token]);
+    if (result.rows.length != 1) {
+        return { "valid": false };
+    } else return { "valid": true, "results": result.rows[0] }
+}
+
 const UpdateTokenExpiryDate = async(pool, token) => {
     let expDate = GetTimeStamp(24);
     const new_session_result = await pool.query('UPDATE sessions SET expiry_date = $1 WHERE token = $2', [expDate, token])
@@ -55,5 +63,6 @@ module.exports = {
     GetTimeStamp,
     GetNewUUID,
     ValidateToken,
-    UpdateTokenExpiryDate
+    UpdateTokenExpiryDate,
+    GetUserInfoByToken
 }
