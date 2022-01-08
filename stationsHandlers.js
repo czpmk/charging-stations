@@ -87,7 +87,7 @@ const GetComments = async(request, response) => {
         return;
     }
 
-    pool.query('SELECT * FROM comments WHERE station_id = $1', [station_id], (error, results) => {
+    pool.query('SELECT comments.id, comments.station_id, comments.user_id, comments.comment, users.email FROM comments RIGHT JOIN users ON comments.user_id = users.id WHERE comments.station_id = $1', [station_id], (error, results) => {
         if (error) {
             throw error
         }
