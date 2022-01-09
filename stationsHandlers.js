@@ -182,7 +182,7 @@ const AddRate = async(request, response) => {
 
     const alreadyRated = await utils.CheckIfAlreadyRated(pool, userId, station_id)
     if (alreadyRated) {
-        response.status(400).json({ "valid": false, "reason": "request", "message": ERROR_MSG.OPERATION_NOT_ALLOWED })
+        response.status(200).json({ "valid": false, "reason": "request", "message": ERROR_MSG.OPERATION_NOT_ALLOWED })
         return;
     } else {
         pool.query('INSERT INTO ratings (user_id, station_id, rate) VALUES ($1, $2, $3)', [userId, station_id, rate], (error, results) => {
