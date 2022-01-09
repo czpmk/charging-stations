@@ -16,6 +16,7 @@ const ERROR_MSG = {
     PARAMETER_INVALID: "PARAMETER_INVALID",
     AUTHENTICATION_INVALID: "AUTHENTICATION_INVALID",
     AUTHENTICATION_EXPIRED: "AUTHENTICATION_EXPIRED",
+    OPERATION_NOT_ALLOWED: "OPERATION_NOT_ALLOWED",
     INTERNAL: "INTERNAL"
 }
 
@@ -23,7 +24,7 @@ const GetAllStations = async(request, response) => {
     const { token } = request.query;
 
     if (!validationResult(request).isEmpty()) {
-        response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.PARAMETER_INVALID });
+        response.status(400).json({ "valid": false, "reason": "parameters", "message": ERROR_MSG.PARAMETER_INVALID });
         return;
     }
 
@@ -50,7 +51,7 @@ const GetChargers = async(request, response) => {
     const { token } = request.query;
 
     if (!validationResult(request).isEmpty()) {
-        response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.PARAMETER_INVALID });
+        response.status(400).json({ "valid": false, "reason": "parameters", "message": ERROR_MSG.PARAMETER_INVALID });
         return;
     }
 
@@ -78,7 +79,7 @@ const GetComments = async(request, response) => {
     const { token } = request.query;
 
     if (!validationResult(request).isEmpty()) {
-        response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.PARAMETER_INVALID });
+        response.status(400).json({ "valid": false, "reason": "parameters", "message": ERROR_MSG.PARAMETER_INVALID });
         return;
     }
 
@@ -105,7 +106,7 @@ const GetRatings = async(request, response) => {
     const { token } = request.query;
 
     if (!validationResult(request).isEmpty()) {
-        response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.PARAMETER_INVALID });
+        response.status(400).json({ "valid": false, "reason": "parameters", "message": ERROR_MSG.PARAMETER_INVALID });
         return;
     }
 
@@ -133,7 +134,7 @@ const AddComment = async(request, response) => {
     const { comment, station_id } = request.body;
 
     if (!validationResult(request).isEmpty()) {
-        response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.PARAMETER_INVALID });
+        response.status(400).json({ "valid": false, "reason": "parameters", "message": ERROR_MSG.PARAMETER_INVALID });
         return;
     }
 
@@ -158,10 +159,47 @@ const AddComment = async(request, response) => {
     })
 }
 
+const AddRate = async(request, response) => {
+    const { token } = request.query;
+    const { rate, station_id } = request.body;
+
+    if (!validationResult(request).isEmpty()) {
+        response.status(400).json({ "valid": false, "reason": "parameters", "message": ERROR_MSG.PARAMETER_INVALID });
+        return;
+    }
+
+    if (await utils.ValidateToken(pool, token) == false) {
+        response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        return;
+    }
+
+    const res = await utils.GetUserInfoByToken(pool, token)
+    if (!res.valid) {
+        response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        return
+    }
+    const userId = res.results.user_id
+
+    const alreadyRated = await utils.CheckIfAlreadyRated(pool, userId, station_id)
+    if (alreadyRated) {
+        response.status(400).json({ "valid": false, "reason": "request", "message": ERROR_MSG.OPERATION_NOT_ALLOWED })
+        return;
+    } else {
+        pool.query('INSERT INTO ratings (user_id, station_id, rate) VALUES ($1, $2, $3)', [userId, station_id, rate], (error, results) => {
+            if (error) {
+                throw error
+            }
+            response.status(200).json({ "valid": true })
+            return;
+        })
+    }
+}
+
 module.exports = {
     GetAllStations,
     GetChargers,
     GetComments,
     GetRatings,
-    AddComment
+    AddComment,
+    AddRate
 }

@@ -58,11 +58,17 @@ const UpdateTokenExpiryDate = async(pool, token) => {
 }
 
 
+const CheckIfAlreadyRated = async(pool, userId, stationId) => {
+    const result = await pool.query('SELECT * FROM ratings WHERE user_id = $1 AND station_id = $2', [userId, stationId]);
+    return result.rows.length == 1
+}
+
 module.exports = {
     ExistsInTable,
     GetTimeStamp,
     GetNewUUID,
     ValidateToken,
     UpdateTokenExpiryDate,
-    GetUserInfoByToken
+    GetUserInfoByToken,
+    CheckIfAlreadyRated
 }

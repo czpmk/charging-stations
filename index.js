@@ -58,6 +58,12 @@ const init = async() => {
         query('token').isLength({ min: 32, max: 32 }),
         stationHandlers.GetRatings);
 
+    app.post('/ratings/new',
+        query('token').isLength({ min: 32, max: 32 }),
+        body('rate').isInt({ min: 1, max: 5 }),
+        body('station_id').isNumeric(),
+        stationHandlers.AddRate);
+
     app.listen(3011, () => {
         console.log('Localhost, listening on port 3011')
     })
