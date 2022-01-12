@@ -17,15 +17,19 @@ app.use(
 app.use(cors());
 
 const init = async() => {
-    app.put('/register',
+    app.post('/register',
         body('email').isEmail().normalizeEmail(),
         body('password').isLength({ min: 64, max: 64 }),
         userHandlers.Register);
 
-    app.get('/login',
+    app.post('/login',
         body('email').isEmail().normalizeEmail(),
         body('password').isLength({ min: 64, max: 64 }),
-        userHandlers.Login);
+        userHandlers.LogIn);
+
+    app.get('/logout',
+        query('token').isLength({ min: 32, max: 32 }),
+        userHandlers.LogOut);
 
     app.get('/auth',
         query('token').isLength({ min: 32, max: 32 }),

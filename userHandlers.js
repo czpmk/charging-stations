@@ -20,16 +20,15 @@ const ERROR_MSG = {
 }
 
 const Register = async(request, response) => {
+    const { email, password } = request.body;
 
     if (!validationResult(request).isEmpty()) {
-        response.status(400).json({ "valid": false, "reason": "password", "message": ERROR_MSG.PARAMETER_INVALID });
+        response.status(200).json({ "valid": false, "reason": "password", "message": ERROR_MSG.PARAMETER_INVALID });
         return;
     }
 
-    const { email, password } = request.body;
-
     if (await utils.ExistsInTable(pool, "users", "email", email)) {
-        response.status(400).json({ "valid": false, "reason": "email", "message": ERROR_MSG.ALREADY_EXISTS });
+        response.status(200).json({ "valid": false, "reason": "email", "message": ERROR_MSG.ALREADY_EXISTS });
         return;
     }
 
@@ -37,14 +36,26 @@ const Register = async(request, response) => {
         if (error) {
             throw error
         }
-        response.status(200).json({ "valid": true })
     })
+
+    const result = await pool.query('SELECT * FROM users WHERE email = $1 AND password = $2', [email, password]);
+
+    if (result.rows.length != 1) {
+        response.status(200).json({ "valid": false, "reason": "email_or_password", "message": ERROR_MSG.AUTHENTICATION_INVALID });
+        return;
+    }
+
+    const userID = result.rows[0].id;
+
+    const session_results = await utils.CreateSession(pool, userID)
+    response.status(200).json(session_results)
+    return;
 }
 
-const Login = async(request, response) => {
+const LogIn = async(request, response) => {
 
     if (!validationResult(request).isEmpty()) {
-        response.status(400).json({ "valid": false, "reason": "email_or_password", "message": ERROR_MSG.PARAMETER_INVALID });
+        response.status(200).json({ "valid": false, "reason": "email_or_password", "message": ERROR_MSG.PARAMETER_INVALID });
         return;
     }
 
@@ -53,21 +64,31 @@ const Login = async(request, response) => {
     const result = await pool.query('SELECT * FROM users WHERE email = $1 AND password = $2', [email, password]);
 
     if (result.rows.length != 1) {
-        response.status(400).json({ "valid": false, "reason": "email_or_password", "message": ERROR_MSG.AUTHENTICATION_INVALID });
+        response.status(200).json({ "valid": false, "reason": "email_or_password", "message": ERROR_MSG.AUTHENTICATION_INVALID });
         return;
     }
 
     const userID = result.rows[0].id;
 
-    const sessions_results = await pool.query(`DELETE FROM sessions WHERE user_id = ${userID}`);
-
-    const newUUID = utils.GetNewUUID();
-    const newTimeStamp = utils.GetTimeStamp(24);
-
-    const new_session_result = await pool.query('INSERT INTO sessions (user_id, expiry_date, token) VALUES ($1, $2, $3)', [userID, newTimeStamp, newUUID])
-    response.status(200).json({ "valid": true, "token": newUUID })
+    const session_results = await utils.CreateSession(pool, userID)
+    response.status(200).json(session_results)
     return;
 }
+
+
+const LogOut = async(request, response) => {
+    const { token } = request.query;
+
+    if (await utils.ValidateToken(pool, token)) {
+        await utils.RemoveToken(pool, token)
+        response.status(200).json({ "valid": true })
+        return;
+    } else {
+        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID });
+        return;
+    }
+}
+
 
 const Authenticate = async(request, response) => {
     const { token } = request.query;
@@ -77,13 +98,14 @@ const Authenticate = async(request, response) => {
         response.status(200).json({ "valid": true })
         return;
     } else {
-        response.status(400).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID });
+        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID });
         return;
     }
 }
 
 module.exports = {
     Register,
-    Login,
+    LogIn,
+    LogOut,
     Authenticate,
 }

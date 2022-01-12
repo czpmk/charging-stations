@@ -57,10 +57,25 @@ const UpdateTokenExpiryDate = async(pool, token) => {
     return true;
 }
 
+const RemoveToken = async(pool, token) => {
+    const new_session_result = await pool.query('DELETE FROM sessions WHERE token = $1', [token])
+    return true;
+}
+
 
 const CheckIfAlreadyRated = async(pool, userId, stationId) => {
     const result = await pool.query('SELECT * FROM ratings WHERE user_id = $1 AND station_id = $2', [userId, stationId]);
     return result.rows.length == 1
+}
+
+const CreateSession = async(pool, userId) => {
+    const sessions_results = await pool.query(`DELETE FROM sessions WHERE user_id = ${userId}`);
+
+    const newUUID = GetNewUUID();
+    const newTimeStamp = GetTimeStamp(24);
+
+    const new_session_result = await pool.query('INSERT INTO sessions (user_id, expiry_date, token) VALUES ($1, $2, $3)', [userId, newTimeStamp, newUUID])
+    return { "valid": true, "token": newUUID }
 }
 
 module.exports = {
@@ -70,5 +85,7 @@ module.exports = {
     ValidateToken,
     UpdateTokenExpiryDate,
     GetUserInfoByToken,
-    CheckIfAlreadyRated
+    CheckIfAlreadyRated,
+    CreateSession,
+    RemoveToken
 }
