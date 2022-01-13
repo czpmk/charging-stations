@@ -13,6 +13,7 @@ const pool = new PgPool({
 
 const ERROR_MSG = {
     ALREADY_EXISTS: "ALREADY_EXISTS",
+    DOES_NOT_EXIST: "DOES_NOT_EXIST",
     PARAMETER_INVALID: "PARAMETER_INVALID",
     AUTHENTICATION_INVALID: "AUTHENTICATION_INVALID",
     AUTHENTICATION_EXPIRED: "AUTHENTICATION_EXPIRED",
@@ -47,6 +48,97 @@ const GetAllStations = async(request, response) => {
     })
 }
 
+const AddStation = async(request, response) => {
+    const { token } = request.query;
+    const { longitude, latitude, operator, city, street, housenumber, fee } = request.body;
+
+    if (!validationResult(request).isEmpty()) {
+        response.status(200).json({ "valid": false, "reason": "parameters", "message": ERROR_MSG.PARAMETER_INVALID });
+        return;
+    }
+
+    if (await utils.ValidateToken(pool, token) == false) {
+        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        return;
+    }
+
+    let stationName = "";
+    if (operator.length != 0)
+        stationName = operator;
+    if (city.length != 0) {
+        if (stationName.length != 0)
+            stationName += " - ";
+
+        stationName += city;
+
+        if (street.length != 0)
+            stationName += ". " + street;
+    }
+    let capacity = 0;
+
+    pool.query('INSERT INTO stations (longitude, latitude, name, operator, city, street, housenumber, fee, capacity)' +
+        ' VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)', [longitude, latitude, stationName, operator, city, street, housenumber, fee, capacity], (error, results) => {
+            if (error) {
+                throw error
+            }
+            response.status(200).json({ "valid": true })
+            return;
+        })
+}
+
+const RemoveStation = async(request, response) => {
+    const { token } = request.query;
+    const { station_id } = request.body;
+
+    if (!validationResult(request).isEmpty()) {
+        response.status(200).json({ "valid": false, "reason": "parameters", "message": ERROR_MSG.PARAMETER_INVALID });
+        return;
+    }
+
+    if (await utils.ValidateToken(pool, token) == false) {
+        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        return;
+    }
+
+    if (await utils.CheckIfUserIsAdmin(pool, token) == false) {
+        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        return;
+    }
+
+    pool.query('SELECT * FROM stations WHERE id = $1', [station_id], (error1, results1) => {
+        if (error1) {
+            throw error1
+        }
+        if (results1.rows.length != 1) {
+            response.status(200).json({ "valid": false, "reason": "station_id", "message": ERROR_MSG.DOES_NOT_EXIST })
+            return;
+        } else {
+            pool.query('DELETE FROM stations WHERE id = $1', [station_id], (error2, results2) => {
+                if (error2) {
+                    throw error2
+                }
+            });
+            pool.query('DELETE FROM chargers WHERE station_id = $1', [station_id], (error3, results3) => {
+                if (error3) {
+                    throw error3
+                }
+            });
+            pool.query('DELETE FROM comments WHERE station_id = $1', [station_id], (error4, results4) => {
+                if (error4) {
+                    throw error4
+                }
+            });
+            pool.query('DELETE FROM ratings WHERE station_id = $1', [station_id], (error5, results5) => {
+                if (error5) {
+                    throw error5
+                }
+            });
+            response.status(200).json({ "valid": true })
+            return;
+        }
+    })
+}
+
 const GetChargers = async(request, response) => {
     const { token } = request.query;
 
@@ -71,6 +163,47 @@ const GetChargers = async(request, response) => {
         } else {
             response.status(200).json({ "valid": true, "length": results.rows.length, "results": [] })
             return;
+        }
+    })
+}
+
+const AddCharger = async(request, response) => {
+    const { token } = request.query;
+    const { station_id, voltage, amperage, plug_type } = request.body;
+
+    if (!validationResult(request).isEmpty()) {
+        response.status(200).json({ "valid": false, "reason": "parameters", "message": ERROR_MSG.PARAMETER_INVALID });
+        return;
+    }
+
+    if (await utils.ValidateToken(pool, token) == false) {
+        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        return;
+    }
+    // check if station exists
+    pool.query('SELECT * FROM stations WHERE id = $1', [station_id], (error1, results1) => {
+        if (error1) {
+            throw error1
+        }
+        if (results1.rows.length != 1) {
+            response.status(200).json({ "valid": false, "reason": "station_id", "message": ERROR_MSG.DOES_NOT_EXIST })
+            return;
+        } else {
+            // increment number of chargers in station
+            pool.query('UPDATE stations SET capacity = capacity + 1 WHERE id = $1', [station_id], (error, results) => {
+                    if (error) {
+                        throw error
+                    }
+                })
+                // add charger
+            pool.query('INSERT INTO chargers (station_id, voltage, amperage, plug_type)' +
+                ' VALUES ($1, $2, $3, $4)', [station_id, voltage, amperage, plug_type], (error, results) => {
+                    if (error) {
+                        throw error
+                    }
+                    response.status(200).json({ "valid": true })
+                    return;
+                })
         }
     })
 }
@@ -201,5 +334,8 @@ module.exports = {
     GetComments,
     GetRatings,
     AddComment,
-    AddRate
+    AddRate,
+    AddStation,
+    AddCharger,
+    RemoveStation
 }

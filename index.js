@@ -39,9 +39,33 @@ const init = async() => {
         query('token').isLength({ min: 32, max: 32 }),
         stationHandlers.GetAllStations);
 
+    app.post('/stations/new',
+        query('token').isLength({ min: 32, max: 32 }),
+        body('longitude').isFloat({ min: -180.0, max: 180.0 }),
+        body('latitude').isFloat({ min: -90.0, max: 90.0 }),
+        body('operator').isLength({ max: 200 }),
+        body('city').isLength({ max: 100 }),
+        body('street').isLength({ max: 100 }),
+        body('housenumber').isLength({ max: 10 }),
+        body('fee').isBoolean(),
+        stationHandlers.AddStation);
+
+    app.post('/stations/remove',
+        query('token').isLength({ min: 32, max: 32 }),
+        body('station_id').isNumeric(),
+        stationHandlers.RemoveStation);
+
     app.get('/chargers',
         query('token').isLength({ min: 32, max: 32 }),
         stationHandlers.GetChargers);
+
+    app.post('/chargers/new',
+        query('token').isLength({ min: 32, max: 32 }),
+        body('station_id').isNumeric(),
+        body('voltage').isNumeric(),
+        body('amperage').isNumeric(),
+        body('plug_type').isLength({ max: 200 }),
+        stationHandlers.AddCharger);
 
     app.get('/comments',
         query('token').isLength({ min: 32, max: 32 }),
