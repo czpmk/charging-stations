@@ -83,7 +83,7 @@ const CheckIfUserIsAdmin = async(pool, token) => {
     if (!userInfo.valid) {
         return false
     } else {
-        const result = await pool.query('SELECT * FROM admins WHERE user_id = $1', [userInfo.user_id]);
+        const result = await pool.query('SELECT * FROM admins WHERE user_id = $1', [userInfo.results.user_id]);
         return result.rows.length == 1
     }
 }

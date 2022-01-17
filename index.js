@@ -35,6 +35,10 @@ const init = async() => {
         query('token').isLength({ min: 32, max: 32 }),
         userHandlers.Authenticate);
 
+    app.get('/user/info',
+        query('token').isLength({ min: 32, max: 32 }),
+        userHandlers.GetUserInfo);
+
     app.get('/stations',
         query('token').isLength({ min: 32, max: 32 }),
         stationHandlers.GetAllStations);
@@ -67,6 +71,11 @@ const init = async() => {
         body('plug_type').isLength({ max: 200 }),
         stationHandlers.AddCharger);
 
+    app.post('/chargers/remove',
+        query('token').isLength({ min: 32, max: 32 }),
+        body('charger_id').isNumeric(),
+        stationHandlers.RemoveCharger);
+
     app.get('/comments',
         query('token').isLength({ min: 32, max: 32 }),
         stationHandlers.GetComments);
@@ -81,6 +90,11 @@ const init = async() => {
         body('comment').isLength({ min: 1, max: 500 }),
         body('station_id').isNumeric(),
         stationHandlers.AddComment);
+
+    app.post('/comments/remove',
+        query('token').isLength({ min: 32, max: 32 }),
+        body('comment_id').isNumeric(),
+        stationHandlers.RemoveComment);
 
     app.get('/ratings',
         query('token').isLength({ min: 32, max: 32 }),

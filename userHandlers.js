@@ -103,9 +103,35 @@ const Authenticate = async(request, response) => {
     }
 }
 
+const GetUserInfo = async(request, response) => {
+    const { token } = request.query;
+    let isAdmin = false;
+    let email = "";
+
+    if (!validationResult(request).isEmpty()) {
+        response.status(200).json({ "valid": false, "reason": "parameters", "message": ERROR_MSG.PARAMETER_INVALID });
+        return;
+    } else if (await utils.ValidateToken(pool, token) == false) {
+        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        return;
+    }
+
+    isAdmin = (await utils.CheckIfUserIsAdmin(pool, token))
+    userData = (await utils.GetUserInfoByToken(pool, token))
+
+    if (userData == false) {
+        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        return;
+    } else {
+        response.status(200).json({ "valid": true, "results": { "is_admin": isAdmin, "email": userData.results.email } })
+        return;
+    }
+}
+
 module.exports = {
     Register,
     LogIn,
     LogOut,
     Authenticate,
+    GetUserInfo
 }

@@ -208,6 +208,45 @@ const AddCharger = async(request, response) => {
     })
 }
 
+const RemoveCharger = async(request, response) => {
+    const { token } = request.query;
+    const { charger_id } = request.body;
+
+    if (!validationResult(request).isEmpty()) {
+        response.status(200).json({ "valid": false, "reason": "parameters", "message": ERROR_MSG.PARAMETER_INVALID });
+        return;
+    }
+
+    if (await utils.ValidateToken(pool, token) == false) {
+        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        return;
+    }
+
+    if (await utils.CheckIfUserIsAdmin(pool, token) == false) {
+        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        return;
+    }
+
+    pool.query('SELECT * FROM chargers WHERE id = $1', [charger_id], (error1, results1) => {
+        if (error1) {
+            throw error1
+        }
+        if (results1.rows.length != 1) {
+            response.status(200).json({ "valid": false, "reason": "charger_id", "message": ERROR_MSG.DOES_NOT_EXIST })
+            return;
+        } else {
+            pool.query('DELETE FROM chargers WHERE id = $1', [charger_id], (error3, results3) => {
+                if (error3) {
+                    throw error3
+                }
+            });
+
+            response.status(200).json({ "valid": true })
+            return;
+        }
+    })
+}
+
 const GetComments = async(request, response) => {
     const { token } = request.query;
 
@@ -230,6 +269,45 @@ const GetComments = async(request, response) => {
             return;
         } else {
             response.status(200).json({ "valid": true, "length": results.rows.length, "results": [] })
+            return;
+        }
+    })
+}
+
+const RemoveComment = async(request, response) => {
+    const { token } = request.query;
+    const { comment_id } = request.body;
+
+    if (!validationResult(request).isEmpty()) {
+        response.status(200).json({ "valid": false, "reason": "parameters", "message": ERROR_MSG.PARAMETER_INVALID });
+        return;
+    }
+
+    if (await utils.ValidateToken(pool, token) == false) {
+        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        return;
+    }
+
+    if (await utils.CheckIfUserIsAdmin(pool, token) == false) {
+        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        return;
+    }
+
+    pool.query('SELECT * FROM comments WHERE id = $1', [comment_id], (error1, results1) => {
+        if (error1) {
+            throw error1
+        }
+        if (results1.rows.length != 1) {
+            response.status(200).json({ "valid": false, "reason": "comment_id", "message": ERROR_MSG.DOES_NOT_EXIST })
+            return;
+        } else {
+            pool.query('DELETE FROM comments WHERE id = $1', [comment_id], (error3, results3) => {
+                if (error3) {
+                    throw error3
+                }
+            });
+
+            response.status(200).json({ "valid": true })
             return;
         }
     })
@@ -337,5 +415,7 @@ module.exports = {
     AddRate,
     AddStation,
     AddCharger,
-    RemoveStation
+    RemoveStation,
+    RemoveCharger,
+    RemoveComment
 }
