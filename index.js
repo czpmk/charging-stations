@@ -66,8 +66,7 @@ const init = async() => {
     app.post('/chargers/new',
         query('token').isLength({ min: 32, max: 32 }),
         body('station_id').isNumeric(),
-        body('voltage').isNumeric(),
-        body('amperage').isNumeric(),
+        body('power').isNumeric(),
         body('plug_type').isLength({ max: 200 }),
         stationHandlers.AddCharger);
 

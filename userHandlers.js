@@ -123,7 +123,7 @@ const GetUserInfo = async(request, response) => {
         response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
         return;
     } else {
-        response.status(200).json({ "valid": true, "results": { "is_admin": isAdmin, "email": userData.results.email } })
+        response.status(200).json({ "valid": true, "results": { "is_admin": isAdmin, "email": userData.results.email, "user_id": userData.results.user_id } })
         return;
     }
 }

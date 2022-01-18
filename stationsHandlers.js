@@ -74,10 +74,9 @@ const AddStation = async(request, response) => {
         if (street.length != 0)
             stationName += ". " + street;
     }
-    let capacity = 0;
 
-    pool.query('INSERT INTO stations (longitude, latitude, name, operator, city, street, housenumber, fee, capacity)' +
-        ' VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)', [longitude, latitude, stationName, operator, city, street, housenumber, fee, capacity], (error, results) => {
+    pool.query('INSERT INTO stations (longitude, latitude, name, operator, city, street, housenumber, fee)' +
+        ' VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', [longitude, latitude, stationName, operator, city, street, housenumber, fee], (error, results) => {
             if (error) {
                 throw error
             }
@@ -169,7 +168,7 @@ const GetChargers = async(request, response) => {
 
 const AddCharger = async(request, response) => {
     const { token } = request.query;
-    const { station_id, voltage, amperage, plug_type } = request.body;
+    const { station_id, power, plug_type } = request.body;
 
     if (!validationResult(request).isEmpty()) {
         response.status(200).json({ "valid": false, "reason": "parameters", "message": ERROR_MSG.PARAMETER_INVALID });
@@ -189,15 +188,9 @@ const AddCharger = async(request, response) => {
             response.status(200).json({ "valid": false, "reason": "station_id", "message": ERROR_MSG.DOES_NOT_EXIST })
             return;
         } else {
-            // increment number of chargers in station
-            pool.query('UPDATE stations SET capacity = capacity + 1 WHERE id = $1', [station_id], (error, results) => {
-                    if (error) {
-                        throw error
-                    }
-                })
-                // add charger
-            pool.query('INSERT INTO chargers (station_id, voltage, amperage, plug_type)' +
-                ' VALUES ($1, $2, $3, $4)', [station_id, voltage, amperage, plug_type], (error, results) => {
+            // add charger
+            pool.query('INSERT INTO chargers (station_id, power, plug_type)' +
+                ' VALUES ($1, $2, $3)', [station_id, power, plug_type], (error, results) => {
                     if (error) {
                         throw error
                     }
