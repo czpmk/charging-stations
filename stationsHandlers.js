@@ -1,6 +1,5 @@
-// const { response } = require('express')
 const utils = require('./utils')
-const { body, query, validationResult } = require('express-validator');
+const { validationResult } = require('express-validator');
 
 const PgPool = require('pg').Pool
 const pool = new PgPool({

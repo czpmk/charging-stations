@@ -1,12 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
-const PgPool = require('pg').Pool
-const pool = new PgPool({
-    user: 'postgres',
-    host: 'localhost',
-    database: 'mapportal',
-    password: 'nnmn',
-    port: 5432
-})
+
 
 
 const ExistsInTable = async(pool, tableName, colName, value) => {
@@ -18,6 +11,7 @@ const GetNewUUID = () => {
     return uuidv4().split('-').join('')
 }
 
+// use addHours to set the session token' expiration date
 const GetTimeStamp = (addHours = false) => {
     let d = new Date();
     if (addHours != false)
