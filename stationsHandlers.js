@@ -84,6 +84,29 @@ const AddStation = async(request, response) => {
         })
 }
 
+const UpdateStationInfo = async(request, response) => {
+    const { token } = request.query;
+    const { id, city, street, housenumber } = request.body;
+
+    if (!validationResult(request).isEmpty()) {
+        response.status(200).json({ "valid": false, "reason": "parameters", "message": ERROR_MSG.PARAMETER_INVALID });
+        return;
+    }
+
+    if (await utils.ValidateToken(pool, token) == false) {
+        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID })
+        return;
+    }
+
+    pool.query('UPDATE stations SET city = $1, street = $2, housenumber = $3 WHERE id = $4', [city, street, housenumber, id], (error, results) => {
+        if (error) {
+            throw error
+        }
+        response.status(200).json({ "valid": true })
+        return;
+    })
+}
+
 const RemoveStation = async(request, response) => {
     const { token } = request.query;
     const { station_id } = request.body;
@@ -409,5 +432,6 @@ module.exports = {
     AddCharger,
     RemoveStation,
     RemoveCharger,
-    RemoveComment
+    RemoveComment,
+    UpdateStationInfo
 }

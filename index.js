@@ -1,12 +1,12 @@
 const express = require('express')
 const bodyParser = require('body-parser')
 const { body, query, validationResult } = require('express-validator');
-
 const app = express()
 const userHandlers = require('./userHandlers');
 const stationHandlers = require('./stationsHandlers');
+const mapUtilsHandlers = require('./mapUtilsHandlers');
 const { response } = require('express');
-const cors = require('cors')
+const cors = require('cors');
 
 app.use(bodyParser.json())
 app.use(
@@ -16,7 +16,7 @@ app.use(
 )
 app.use(cors());
 
-const init = async() => {
+const init = async () => {
     app.post('/register',
         body('email').isEmail().normalizeEmail(),
         body('password').isLength({ min: 64, max: 64 }),
@@ -53,6 +53,14 @@ const init = async() => {
         body('housenumber').isLength({ max: 10 }),
         body('fee').isBoolean(),
         stationHandlers.AddStation);
+
+    app.post('/stations/updateInfo',
+        query('token').isLength({ min: 32, max: 32 }),
+        body('id').isNumeric(),
+        body('city').isLength({ max: 100 }),
+        body('street').isLength({ max: 100 }),
+        body('housenumber').isLength({ max: 10 }),
+        stationHandlers.UpdateStationInfo);
 
     app.post('/stations/remove',
         query('token').isLength({ min: 32, max: 32 }),
@@ -104,6 +112,12 @@ const init = async() => {
         body('rate').isInt({ min: 1, max: 5 }),
         body('station_id').isNumeric(),
         stationHandlers.AddRate);
+
+    app.post('/mapUtils/reverseGeocode',
+        query('token').isLength({ min: 32, max: 32 }),
+        body('longitude').isNumeric(),
+        body('latitude').isNumeric(),
+        mapUtilsHandlers.ReverseGeocode);
 
     app.listen(3011, () => {
         console.log('Localhost, listening on port 3011')
