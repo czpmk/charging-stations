@@ -119,6 +119,14 @@ const init = async () => {
         body('latitude').isNumeric(),
         mapUtilsHandlers.ReverseGeocode);
 
+    app.post('/mapUtils/findRoute',
+        query('token').isLength({ min: 32, max: 32 }),
+        body('longitude1').isNumeric(),
+        body('latitude1').isNumeric(),
+        body('longitude2').isNumeric(),
+        body('latitude2').isNumeric(),
+        mapUtilsHandlers.GetRoute);
+
     app.listen(3011, () => {
         console.log('Localhost, listening on port 3011')
     })
