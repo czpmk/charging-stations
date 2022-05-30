@@ -81,7 +81,7 @@ const GetRoute = async (request, response) => {
     }
     catch (exc) {
         console.log(exc);
-        response.status(200).json({ "valid": false, "reason": result, "message": ERROR_MSG.INTERNAL });
+        response.status(200).json({ "valid": false, "reason": null, "message": ERROR_MSG.INTERNAL });
     }
 }
 
