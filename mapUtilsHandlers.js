@@ -1,20 +1,30 @@
 const utils = require('./utils')
 const { validationResult } = require('express-validator');
+const { ApiKeyManager } = require("@esri/arcgis-rest-request");
+const { solveRoute } = require("@esri/arcgis-rest-routing");
 const fs = require('fs');
 const fetch = require('node-fetch');
 
-const pathToGoogleMapsApiKeyJson = './google-api-key';
-if (!fs.existsSync(pathToGoogleMapsApiKeyJson)) {
-    throw "'google-api-key' file does not exist";
+const pathToApiKeysJson = './api-keys';
+if (!fs.existsSync(pathToApiKeysJson)) {
+    throw "'api-keys' file does not exist";
 }
 
-let googleMapsApiKeyJson = JSON.parse(fs.readFileSync(pathToGoogleMapsApiKeyJson));
-if (!googleMapsApiKeyJson.hasOwnProperty('key')) {
-    throw "'key' not found in 'google-api-key' json file";
+let apiKeysJson = JSON.parse(fs.readFileSync(pathToApiKeysJson));
+if (!apiKeysJson.hasOwnProperty('googleKey')) {
+    throw "'googleKey' not found in 'api-keys' json file";
 }
-const gmKey = googleMapsApiKeyJson.key;
+const gmKey = apiKeysJson.googleKey;
 if (gmKey.length == 0) {
-    throw "'key' invalid in 'google-api-key' json file";
+    throw "'googleKey' invalid in 'api-keys' json file";
+}
+
+if (!apiKeysJson.hasOwnProperty('arcGisKey')) {
+    throw "'arcGisKey' not found in 'api-keys' json file";
+}
+const arcGisKey = apiKeysJson.arcGisKey;
+if (arcGisKey.length == 0) {
+    throw "'arcGisKey' invalid in 'api-keys' json file";
 }
 
 const PgPool = require('pg').Pool
@@ -40,6 +50,39 @@ const ADDRESS = {
     CITY: 'locality',
     STREET: 'route',
     STREET_NUMER: 'street_number'
+}
+
+const ArcGisCall = async (start, end) => {
+    return await solveRoute(
+        {
+            stops: [start, end],
+            authentication: ApiKeyManager.fromKey(arcGisKey)
+        }
+    )
+}
+
+const GetRoute = async (request, response) => {
+    const { token } = request.query;
+    const { longitude1, latitude1, longitude2, latitude2 } = request.body;
+
+    if (!validationResult(request).isEmpty()) {
+        response.status(200).json({ "valid": false, "reason": "parameters", "message": ERROR_MSG.PARAMETER_INVALID });
+        return;
+    }
+
+    if (await utils.ValidateToken(pool, token) == false) {
+        response.status(200).json({ "valid": false, "reason": "token", "message": ERROR_MSG.AUTHENTICATION_INVALID });
+        return;
+    }
+
+    try {
+        let arcGisCallResponse = await ArcGisCall([longitude1, latitude1], [longitude2, latitude2]);
+        response.status(200).json({ "valid": true, "length": Object.keys(arcGisCallResponse).length, "results": arcGisCallResponse });
+    }
+    catch (exc) {
+        console.log(exc);
+        response.status(200).json({ "valid": false, "reason": result, "message": ERROR_MSG.INTERNAL });
+    }
 }
 
 const GoogleMapsAPICall = async (lat, lng, key) => {
@@ -140,4 +183,5 @@ const ReverseGeocode = async (request, response) => {
 
 module.exports = {
     ReverseGeocode,
+    GetRoute
 }
